@@ -40,6 +40,8 @@
 
 #include <vecmath/mat.h>
 
+#include <vector>
+
 namespace TrenchBroom {
     namespace Renderer {
         EntityModelRenderer::EntityModelRenderer(Logger& logger, Assets::EntityModelManager& entityModelManager, const Model::EditorContext& editorContext) :
@@ -123,38 +125,56 @@ namespace TrenchBroom {
             m_entityModelManager.prepare(vboManager);
         }
 
+        static std::vector<std::tuple<const Model::EntityNode*, Renderer::TexturedRenderer*>> getEntities(const std::unordered_map<const Model::EntityNode*, TexturedRenderer*>& entities, const Assets::Orientation orientation) {
+            auto result = std::vector<std::tuple<const Model::EntityNode*, Renderer::TexturedRenderer*>>{};
+            result.reserve(entities.size());
+
+            for (const auto& [entityNode, renderer] : entities) {
+                if (const auto* model = entityNode->entity().model(); model && model->orientation() == orientation) {
+                    result.emplace_back(entityNode, renderer);
+                }
+            }
+
+            return result;
+        }
+
         void EntityModelRenderer::doRender(RenderContext& renderContext) {
             auto& prefs = PreferenceManager::instance();
 
-            auto shader = ActiveShader{renderContext.shaderManager(), Shaders::EntityModelShader};
-            shader.set("Brightness", prefs.get(Preferences::Brightness));
-            shader.set("ApplyTinting", m_applyTinting);
-            shader.set("TintColor", m_tintColor);
-            shader.set("GrayScale", false);
-            shader.set("Texture", 0);
-            shader.set("ShowSoftMapBounds", !renderContext.softMapBounds().is_empty());
-            shader.set("SoftMapBoundsMin", renderContext.softMapBounds().min);
-            shader.set("SoftMapBoundsMax", renderContext.softMapBounds().max);
-            shader.set("SoftMapBoundsColor", vm::vec4f{prefs.get(Preferences::SoftMapBoundsColor).r(),
-                                                       prefs.get(Preferences::SoftMapBoundsColor).g(),
-                                                       prefs.get(Preferences::SoftMapBoundsColor).b(),
-                                                       0.1f});
+            const auto renderModels = [&](const auto& entities, const auto& shaderConfig) {
+                auto shader = ActiveShader{renderContext.shaderManager(), shaderConfig};
+                shader.set("Brightness", prefs.get(Preferences::Brightness));
+                shader.set("ApplyTinting", m_applyTinting);
+                shader.set("TintColor", m_tintColor);
+                shader.set("GrayScale", false);
+                shader.set("Texture", 0);
+                shader.set("ShowSoftMapBounds", !renderContext.softMapBounds().is_empty());
+                shader.set("SoftMapBoundsMin", renderContext.softMapBounds().min);
+                shader.set("SoftMapBoundsMax", renderContext.softMapBounds().max);
+                shader.set("SoftMapBoundsColor", vm::vec4f{prefs.get(Preferences::SoftMapBoundsColor).r(),
+                                                        prefs.get(Preferences::SoftMapBoundsColor).g(),
+                                                        prefs.get(Preferences::SoftMapBoundsColor).b(),
+                                                        0.1f});
+
+                for (const auto& [entityNode, renderer] : entities) {
+                    if (!m_showHiddenEntities && !m_editorContext.visible(entityNode)) {
+                        continue;
+                    }
+
+                    const auto transformation = vm::mat4x4f{entityNode->entity().modelTransformation()};
+                    const auto multMatrix = MultiplyModelMatrix{renderContext.transformation(), transformation};
+
+                    shader.set("ModelMatrix", transformation);
+
+                    renderer->render();
+                }
+            };
 
             glAssert(glEnable(GL_TEXTURE_2D));
             glAssert(glActiveTexture(GL_TEXTURE0));
 
-            for (const auto& [entityNode, renderer] : m_entities) {
-                if (!m_showHiddenEntities && !m_editorContext.visible(entityNode)) {
-                    continue;
-                }
-
-                const auto transformation = vm::mat4x4f{entityNode->entity().modelTransformation()};
-                const auto multMatrix = MultiplyModelMatrix{renderContext.transformation(), transformation};
-
-                shader.set("ModelMatrix", transformation);
-
-                renderer->render();
-            }
+            renderModels(getEntities(m_entities, Assets::Orientation::Fixed), Shaders::FixedEntityModelShader);
+            renderModels(getEntities(m_entities, Assets::Orientation::Billboard), Shaders::BillboardEntityModelShader);
         }
     }
 }

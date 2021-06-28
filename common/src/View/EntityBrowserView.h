@@ -38,6 +38,7 @@ namespace TrenchBroom {
         class EntityDefinitionManager;
         enum class EntityDefinitionSortOrder;
         class EntityModelManager;
+        enum class Orientation;
         class PointEntityDefinition;
     }
 
@@ -54,6 +55,7 @@ namespace TrenchBroom {
             using EntityRenderer = Renderer::TexturedRenderer;
             const Assets::PointEntityDefinition* entityDefinition;
             EntityRenderer* modelRenderer;
+            Assets::Orientation modelOrientation;
             Renderer::FontDescriptor fontDescriptor;
             vm::bbox3f bounds;
         };

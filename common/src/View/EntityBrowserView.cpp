@@ -182,12 +182,14 @@ namespace TrenchBroom {
                 Renderer::TexturedRenderer* modelRenderer = nullptr;
 
                 vm::bbox3f rotatedBounds;
+                auto modelOrientation = Assets::Orientation::Fixed;
                 if (frame != nullptr) {
                     const auto bounds = frame->bounds();
                     const auto center = bounds.center();
                     const auto transform =vm::translation_matrix(center) * vm::rotation_matrix(m_rotation) *vm::translation_matrix(-center);
                     rotatedBounds = bounds.transform(transform);
                     modelRenderer = m_entityModelManager.renderer(spec);
+                    modelOrientation = frame->orientation();
                 } else {
                     rotatedBounds = vm::bbox3f(definition->bounds());
                     const auto center = rotatedBounds.center();
@@ -196,7 +198,7 @@ namespace TrenchBroom {
                 }
 
                 const auto boundsSize = rotatedBounds.size();
-                layout.addItem(EntityCellData{definition, modelRenderer, actualFont, rotatedBounds},
+                layout.addItem(EntityCellData{definition, modelRenderer, modelOrientation, actualFont, rotatedBounds},
                                boundsSize.y(),
                                boundsSize.z(),
                                actualSize.x(),
@@ -278,32 +280,39 @@ namespace TrenchBroom {
         }
 
         void EntityBrowserView::renderModels(Layout& layout, const float y, const float height, Renderer::Transformation& transformation) {
-            Renderer::ActiveShader shader(shaderManager(), Renderer::Shaders::EntityModelShader);
-            shader.set("ApplyTinting", false);
-            shader.set("Brightness", pref(Preferences::Brightness));
-            shader.set("GrayScale", false);
-
             glAssert(glFrontFace(GL_CW));
 
             m_entityModelManager.prepare(vboManager());
 
-            for (const auto& group : layout.groups()) {
-                if (group.intersectsY(y, height)) {
-                    for (const auto& row : group.rows()) {
-                        if (row.intersectsY(y, height)) {
-                            for (const auto& cell : row.cells()) {
-                                auto* modelRenderer = cellData(cell).modelRenderer;
+            const auto doRenderModels = [&](const auto orientation, const auto& shaderConfig) {
+                auto shader = Renderer::ActiveShader{shaderManager(), shaderConfig};
+                shader.set("ApplyTinting", false);
+                shader.set("Brightness", pref(Preferences::Brightness));
+                shader.set("GrayScale", false);
 
-                                if (modelRenderer != nullptr) {
-                                    const auto itemTrans = itemTransformation(cell, y, height);
-                                    Renderer::MultiplyModelMatrix multMatrix(transformation, itemTrans);
-                                    modelRenderer->render();
+                for (const auto& group : layout.groups()) {
+                    if (group.intersectsY(y, height)) {
+                        for (const auto& row : group.rows()) {
+                            if (row.intersectsY(y, height)) {
+                                for (const auto& cell : row.cells()) {
+                                    if (cellData(cell).modelOrientation == orientation) {
+                                        auto* modelRenderer = cellData(cell).modelRenderer;
+
+                                        if (modelRenderer != nullptr) {
+                                            const auto itemTrans = itemTransformation(cell, y, height);
+                                            Renderer::MultiplyModelMatrix multMatrix(transformation, itemTrans);
+                                            modelRenderer->render();
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
+            };
+
+            doRenderModels(Assets::Orientation::Fixed, Renderer::Shaders::FixedEntityModelShader);
+            doRenderModels(Assets::Orientation::Billboard, Renderer::Shaders::BillboardEntityModelShader);
         }
 
         void EntityBrowserView::renderNames(Layout& layout, const float y, const float height, const vm::mat4x4f& projection) {
