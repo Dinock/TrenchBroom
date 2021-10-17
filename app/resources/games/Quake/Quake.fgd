@@ -287,7 +287,7 @@
 	[
 		spawnflags(Flags) = [ 1 : "Start off" : 0 ]
 	]
-@PointClass size(-8 -8 -8, 8 8 8) base(Appearflags, Light, Target, Targetname) =
+@PointClass size(-8 -8 -8, 8 8 8) base(Appearflags, Light, Target, Targetname) model({ "path": "progs/s_light.spr" }) =
 	light_globe : "Globe light"
 	[
 		spawnflags(Flags) = [ 1 : "Start off" : 0 ]
