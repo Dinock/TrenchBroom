@@ -48,12 +48,20 @@ namespace TrenchBroom {
 
         /**
          * Controls the orientation of an entity model.
+         *
+         * See https://github.com/ericwa/Quakespasm/blob/7e7e13f9335697f8e94d1631fdf60ecdddb7498f/quakespasm/Quake/r_sprite.c#L82
          */
         enum class Orientation {
-            /** The entity model is oriented according to the entity properties (position and rotation). */
-            Fixed,
-            /** The entity model uses the position from the entity, but it is always oriented towards the camera. */
-            Billboard
+            /** Faces view plane, up is towards the heavens. */
+            ViewPlaneParallelUpright,
+            /** Faces camera origin, up is towards the heavens. */
+            FacingUpright,
+            /** Faces view plane, up is towards the top of the screen. */
+            ViewPlaneParallel,
+            /** Pitch yaw roll are independent of camera. */
+            Oriented,
+            /** Faces view plane, but obeys roll value. */
+            ViewPlaneParallelOriented,
         };
 
         /**

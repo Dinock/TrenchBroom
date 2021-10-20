@@ -217,7 +217,7 @@ namespace TrenchBroom {
             }
 
             Orientation orientation() const override {
-                return Orientation::Fixed;
+                return Orientation::Oriented;
             }
 
             float intersect(const vm::ray3f& /* ray */) const override {

@@ -76,11 +76,12 @@ namespace TrenchBroom {
         }
 
         static SprPicture parsePictureFrame(BufferedReader& reader, const Assets::Palette& palette) {
-            const auto marker = reader.readInt<int32_t>();
-            if (marker == 0) {
+            const auto group = reader.readInt<int32_t>();
+            if (group == 0) { // single picture frame
                 return parsePicture(reader, palette);
             }
 
+            // multiple picture frame
             const auto pictureCount = reader.readSize<int32_t>();
             reader.seekForward(pictureCount * sizeof(float));
             
@@ -92,30 +93,39 @@ namespace TrenchBroom {
             return picture;
         }
 
+        static Assets::Orientation parseSpriteOrientationType(BufferedReader& reader) {
+            const auto type = reader.readInt<int32_t>();
+            if (type < 0 || type > 4) {
+                throw AssetException{"Unknown SPR type: " + std::to_string(type)};
+            }
+
+            return static_cast<Assets::Orientation>(type);
+        }
+
         std::unique_ptr<Assets::EntityModel> SprParser::doInitializeModel(Logger& /* logger */) {
-            // see https://www.gamers.org/dEngine/quake/spec/quake-spec31.html#CSPRG
+            // see https://www.gamers.org/dEngine/quake/spec/quake-spec34/qkspec_6.htm#CSPRF
 
             auto reader = Reader::from(m_begin, m_end).buffer();
 
             const auto ident = reader.readString(4);
-            const auto version1 = reader.readInt<int32_t>();
-            const auto version12 = reader.readInt<int32_t>();
-
             if (ident != "IDSP") {
                 throw AssetException{"Unknown SPR ident: " + ident};
             }
-            if (version1 != 1 || (version12 != 1 && version12 != 2)) {
-                throw AssetException{"Unknown SPR version: " + std::to_string(version1) + "." + std::to_string(version12)};
+
+            const auto version = reader.readInt<int32_t>();
+            if (version != 1) {
+                throw AssetException{"Unknown SPR version: " + std::to_string(version)};
             }
 
+            const auto orientationType = parseSpriteOrientationType(reader);
             /* const auto radius = */ reader.readFloat<float>();
             /* const auto maxWidth = */ reader.readSize<int32_t>();
             /* const auto maxHeight = */ reader.readSize<int32_t>();
             const auto frameCount = reader.readSize<int32_t>();
-            /* const auto uk0 = */ reader.readInt<int32_t>();
-            /* const auto uk01 = */ reader.readInt<int32_t>();
+            /* const auto beamLength = */ reader.readFloat<float>();
+            /* const auto synchtype = */ reader.readInt<int32_t>();
 
-            auto model = std::make_unique<Assets::EntityModel>(m_name, Assets::PitchType::Normal, Assets::Orientation::Billboard);
+            auto model = std::make_unique<Assets::EntityModel>(m_name, Assets::PitchType::Normal, orientationType);
             for (size_t i = 0; i < frameCount; ++i) {
                 auto& frame = model->addFrame();
                 frame.setSkinOffset(i);

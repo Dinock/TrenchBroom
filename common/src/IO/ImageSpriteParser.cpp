@@ -45,7 +45,7 @@ namespace TrenchBroom {
             auto textures = std::vector<Assets::Texture>{};
             textures.push_back(textureReader.readTexture(m_file));
 
-            auto model = std::make_unique<Assets::EntityModel>(m_name, Assets::PitchType::Normal, Assets::Orientation::Billboard);
+            auto model = std::make_unique<Assets::EntityModel>(m_name, Assets::PitchType::Normal, Assets::Orientation::ViewPlaneParallel);
             model->addFrame();
 
             auto& surface = model->addSurface(m_name);
