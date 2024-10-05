@@ -19,10 +19,15 @@
 
 #pragma once
 
+#include "kdl/reflection_decl.h"
+
+#include <cstddef>
 #include <vector>
 
-namespace TrenchBroom {
-namespace Model {
+namespace TrenchBroom
+{
+namespace Model
+{
 class BrushNode;
 class EntityNode;
 class GroupNode;
@@ -30,7 +35,8 @@ class LayerNode;
 class Node;
 class PatchNode;
 
-class NodeCollection {
+class NodeCollection
+{
 private:
   std::vector<Node*> m_nodes;
   std::vector<LayerNode*> m_layers;
@@ -40,6 +46,12 @@ private:
   std::vector<PatchNode*> m_patches;
 
 public:
+  kdl_reflect_decl(
+    NodeCollection, m_nodes, m_layers, m_groups, m_entities, m_brushes, m_patches);
+
+  NodeCollection();
+  explicit NodeCollection(const std::vector<Node*>& nodes);
+
   bool empty() const;
   size_t nodeCount() const;
   size_t layerCount() const;

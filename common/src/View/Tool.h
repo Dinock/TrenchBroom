@@ -24,14 +24,15 @@
 class QWidget;
 class QStackedLayout;
 
-namespace TrenchBroom {
-namespace View {
-class Tool {
+namespace TrenchBroom::View
+{
+class Tool
+{
 private:
-  bool m_active;
+  bool m_active = false;
 
-  QStackedLayout* m_book;
-  int m_pageIndex;
+  QStackedLayout* m_book = nullptr;
+  int m_pageIndex = 0;
 
 public:
   Notifier<Tool&> toolActivatedNotifier;
@@ -61,5 +62,5 @@ private:
 
   virtual QWidget* doCreatePage(QWidget* parent);
 };
-} // namespace View
-} // namespace TrenchBroom
+
+} // namespace TrenchBroom::View

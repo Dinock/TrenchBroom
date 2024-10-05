@@ -18,6 +18,16 @@ If you have an existing git clone, you can update submodules using:
 git submodule update --init --recursive
 ```
 
+## Dependencies
+
+TrenchBroom uses [vcpkg](https://vcpkg.io/) to manage build dependencies except for Qt. vcpkg is integrated into TrenchBroom's build system and will download and build all dependencies once  during cmake's configure phase. This is an automatic process, but it can take a little while when it happens for the first time.
+
+---
+
+## Docker
+
+An external unofficial project called [Dockerized TrenchBroom](https://github.com/jonathanlinat/dockerized-trenchbroom) is available for developers. It facilitates the compilation of TrenchBroom's source code and the creation of binaries using [Docker](https://www.docker.com/).
+
 ---
 
 ## Windows
@@ -26,9 +36,9 @@ git submodule update --init --recursive
 
 In order to develop, debug and compile TrenchBroom, you need to install tools listed below.
 
-#### Visual Studio 2019
+#### Visual Studio 2022
 
-Download [VS 2019](https://visualstudio.microsoft.com/vs/) and install it.
+Download [VS 2022](https://visualstudio.microsoft.com/vs/) and install it.
 
 You'll also need to install these dependencies using Visual Studio Installer (included with main installer):
 
@@ -58,12 +68,12 @@ Then, execute this command to configure the project:
 
 - For 32-bit:
 ```bash
-cmake .. -G "Visual Studio 16 2019" -T v142 -A Win32 -DCMAKE_PREFIX_PATH="C:\Qt\5.13.0\msvc2017"
+cmake .. -G"Visual Studio 17 2022" -T v143 -A Win32 -DCMAKE_PREFIX_PATH="C:\Qt\5.13.0\msvc2017"
 ```
 
 - For 64-bit:
 ```bash
-cmake .. -G "Visual Studio 16 2019" -T v142 -A x64 -DCMAKE_PREFIX_PATH="C:\Qt\5.13.0\msvc2017_64"
+cmake .. -G"Visual Studio 17 2022" -T v143 -A x64 -DCMAKE_PREFIX_PATH="C:\Qt\5.13.0\msvc2017_64"
 ```
 
 > **Note**: Make sure to specify the correct Qt as `CMAKE_PREFIX_PATH` value.
@@ -84,22 +94,10 @@ In order to develop, debug and compile TrenchBroom, you need to install tools li
 
 TrenchBroom depends on:
 
-- g++ >= 7
-- Qt >= 5.9
-- FreeImage: libfreeimage-dev
-- OpenGL and GLU development headers (Mesa OpenGL development packages) freeglut3, freeglut3-dev, mesa-common-dev
-- X11 video mode extension library: libxxf86vm-dev
-
 If you have a debian-based distribution, open a command prompt and execute this command to install required dependencies:
 
 ```bash
-sudo apt-get install g++-7 qt5-default libqt5svg5-dev freeglut3-dev libglew-dev mesa-common-dev build-essential libglm-dev libxxf86vm-dev libfreeimage-dev libfreetype6-dev pandoc cmake p7zip-full ninja-build
-```
-
-Or, on Fedora:
-
-```bash
-sudo dnf install g++ cmake qt5-qtbase-devel qt5-qtsvg-devel ninja-build freetype-devel freeimage-devel pandoc mesa-libGLU-devel
+sudo apt-get install g++ qtbase5-dev libqt5svg5-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev mesa-common-dev libglew-dev libxrandr-dev build-essential libglm-dev libxxf86vm-dev libfreetype6-dev libfreeimage-dev libtinyxml2-dev pandoc cmake p7zip-full ninja-build curl
 ```
 
 ### Build TrenchBroom
@@ -115,7 +113,7 @@ cd <path/to/TrenchBroom>/build
 Then, execute this command to configure the project:
 
 ```bash
-cmake .. -DCMAKE_BUILD_TYPE=Debug
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="cmake/packages"
 cmake --build . --target TrenchBroom
 ```
 
@@ -138,7 +136,7 @@ Download Xcode from the App Store.
 Open a command prompt and execute this command to install required dependencies:
 
 ```bash
-brew install cmake qt pandoc
+brew install cmake qt pandoc python pkg-config
 ```
 
 Finally, build the project:

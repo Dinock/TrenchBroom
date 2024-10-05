@@ -19,39 +19,35 @@
 
 #pragma once
 
-#include "FloatType.h"
-#include "Model/HitFilter.h"
-#include "Model/HitType.h"
 #include "ToolChain.h"
 #include "View/InputState.h"
-
-#include <vecmath/line.h>
-#include <vecmath/plane.h>
-#include <vecmath/vec.h>
 
 #include <memory>
 #include <string>
 #include <vector>
 
-namespace TrenchBroom {
-namespace Model {
+namespace TrenchBroom::Model
+{
 class Hit;
 class HitQuery;
 class PickResult;
-} // namespace Model
+} // namespace TrenchBroom::Model
 
-namespace Renderer {
+namespace TrenchBroom::Renderer
+{
 class RenderBatch;
 class RenderContext;
-} // namespace Renderer
+} // namespace TrenchBroom::Renderer
 
-namespace View {
-class DragTracker;
+namespace TrenchBroom::View
+{
+class GestureTracker;
 class DropTracker;
 class InputState;
 class Tool;
 
-class ToolController {
+class ToolController
+{
 public:
   virtual ~ToolController();
 
@@ -70,16 +66,19 @@ public:
   virtual void mouseMove(const InputState& inputState);
   virtual void mouseScroll(const InputState& inputState);
 
-  virtual std::unique_ptr<DragTracker> acceptMouseDrag(const InputState& inputState);
-  virtual bool anyToolDragging(const InputState& inputState) const;
+  virtual std::unique_ptr<GestureTracker> acceptMouseDrag(const InputState& inputState);
+  virtual std::unique_ptr<GestureTracker> acceptGesture(const InputState& inputState);
 
+  virtual bool shouldAcceptDrop(
+    const InputState& inputState, const std::string& payload) const;
   virtual std::unique_ptr<DropTracker> acceptDrop(
     const InputState& inputState, const std::string& payload);
 
   virtual void setRenderOptions(
     const InputState& inputState, Renderer::RenderContext& renderContext) const;
   virtual void render(
-    const InputState& inputState, Renderer::RenderContext& renderContext,
+    const InputState& inputState,
+    Renderer::RenderContext& renderContext,
     Renderer::RenderBatch& renderBatch);
 
   virtual bool cancel();
@@ -88,7 +87,8 @@ protected:
   void refreshViews();
 };
 
-class ToolControllerGroup : public ToolController {
+class ToolControllerGroup : public ToolController
+{
 private:
   ToolChain m_chain;
 
@@ -111,21 +111,22 @@ public:
   void mouseMove(const InputState& inputState) override;
   void mouseScroll(const InputState& inputState) override;
 
-  std::unique_ptr<DragTracker> acceptMouseDrag(const InputState& inputState) override;
+  std::unique_ptr<GestureTracker> acceptMouseDrag(const InputState& inputState) override;
   std::unique_ptr<DropTracker> acceptDrop(
     const InputState& inputState, const std::string& payload) override;
 
   void setRenderOptions(
     const InputState& inputState, Renderer::RenderContext& renderContext) const override;
   void render(
-    const InputState& inputState, Renderer::RenderContext& renderContext,
+    const InputState& inputState,
+    Renderer::RenderContext& renderContext,
     Renderer::RenderBatch& renderBatch) override;
 
   bool cancel() override;
 
 private: // subclassing interface
   virtual bool doShouldHandleMouseDrag(const InputState& inputState) const;
-  virtual bool doShouldHandleDrop(const InputState& inputState, const std::string& payload) const;
+  virtual bool doShouldAcceptDrop(
+    const InputState& inputState, const std::string& payload) const;
 };
-} // namespace View
-} // namespace TrenchBroom
+} // namespace TrenchBroom::View

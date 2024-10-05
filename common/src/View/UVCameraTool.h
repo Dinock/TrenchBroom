@@ -24,15 +24,19 @@
 
 #include <memory>
 
-namespace TrenchBroom {
-namespace Renderer {
+namespace TrenchBroom
+{
+namespace Renderer
+{
 class OrthographicCamera;
 }
 
-namespace View {
-class DragTracker;
+namespace View
+{
+class GestureTracker;
 
-class UVCameraTool : public ToolController, public Tool {
+class UVCameraTool : public ToolController, public Tool
+{
 private:
   Renderer::OrthographicCamera& m_camera;
 
@@ -45,7 +49,7 @@ private:
 
   void mouseScroll(const InputState& inputState) override;
 
-  std::unique_ptr<DragTracker> acceptMouseDrag(const InputState& inputState) override;
+  std::unique_ptr<GestureTracker> acceptMouseDrag(const InputState& inputState) override;
 
   bool cancel() override;
 };

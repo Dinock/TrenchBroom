@@ -24,13 +24,15 @@
 
 #include <memory>
 
-namespace TrenchBroom {
-namespace View {
-class DragTracker;
+namespace TrenchBroom::View
+{
+
+class GestureTracker;
 class MapDocument;
 class UVViewHelper;
 
-class UVOffsetTool : public ToolController, public Tool {
+class UVOffsetTool : public ToolController, public Tool
+{
 private:
   std::weak_ptr<MapDocument> m_document;
   const UVViewHelper& m_helper;
@@ -42,9 +44,9 @@ private:
   Tool& tool() override;
   const Tool& tool() const override;
 
-  std::unique_ptr<DragTracker> acceptMouseDrag(const InputState& inputState) override;
+  std::unique_ptr<GestureTracker> acceptMouseDrag(const InputState& inputState) override;
 
   bool cancel() override;
 };
-} // namespace View
-} // namespace TrenchBroom
+
+} // namespace TrenchBroom::View

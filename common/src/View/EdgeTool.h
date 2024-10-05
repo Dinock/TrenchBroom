@@ -22,24 +22,29 @@
 #include "FloatType.h"
 #include "View/VertexToolBase.h"
 
-#include <vecmath/segment.h>
+#include "vm/segment.h"
 
 #include <memory>
 #include <string>
 #include <vector>
 
-namespace TrenchBroom {
-namespace Model {
+namespace TrenchBroom
+{
+namespace Model
+{
 class BrushNode;
 class PickResult;
 } // namespace Model
 
-namespace Renderer {
+namespace Renderer
+{
 class Camera;
 }
 
-namespace View {
-class EdgeTool : public VertexToolBase<vm::segment3> {
+namespace View
+{
+class EdgeTool : public VertexToolBase<vm::segment3>
+{
 private:
   std::unique_ptr<EdgeHandleManager> m_edgeHandles;
 
@@ -53,15 +58,17 @@ private:
   using VertexToolBase::findIncidentBrushes;
 
 public:
-  void pick(const vm::ray3& pickRay, const Renderer::Camera& camera, Model::PickResult& pickResult)
-    const override;
+  void pick(
+    const vm::ray3& pickRay,
+    const Renderer::Camera& camera,
+    Model::PickResult& pickResult) const override;
 
 public:
   EdgeHandleManager& handleManager() override;
   const EdgeHandleManager& handleManager() const override;
 
 public:
-  std::tuple<vm::vec3, vm::vec3> handlePositionAndOffset(
+  std::tuple<vm::vec3, vm::vec3> handlePositionAndHitPoint(
     const std::vector<Model::Hit>& hits) const override;
 
   MoveResult move(const vm::vec3& delta) override;

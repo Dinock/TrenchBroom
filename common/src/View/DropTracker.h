@@ -19,11 +19,12 @@
 
 #pragma once
 
-namespace TrenchBroom {
-namespace View {
+namespace TrenchBroom::View
+{
 class InputState;
 
-class DropTracker {
+class DropTracker
+{
 public:
   virtual ~DropTracker();
 
@@ -31,5 +32,5 @@ public:
   virtual bool drop(const InputState& inputState) = 0;
   virtual void leave(const InputState& inputState) = 0;
 };
-} // namespace View
-} // namespace TrenchBroom
+
+} // namespace TrenchBroom::View

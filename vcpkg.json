@@ -1,0 +1,49 @@
+{
+  "name": "trenchbroom",
+  "version": "1.0.0",
+  "dependencies": [
+    {
+      "name": "assimp",
+      "version>=": "5.3.1#2"
+    },
+    {
+      "name": "catch2",
+      "version>=": "2.13.8"
+    },
+    {
+      "name": "fmt",
+      "version>=": "7.1.3#1"
+    },
+    {
+      "name": "freeimage",
+      "version>=": "3.18.0#25",
+      "platform": "!linux"
+    },
+    {
+      "name": "freetype",
+      "version>=": "2.11.1",
+      "platform": "!linux"
+    },
+    {
+      "name": "glew",
+      "version>=": "2.2.0#2",
+      "platform": "!linux"
+    },
+    {
+      "name": "miniz",
+      "version>=": "2.2.0#1"
+    },
+    {
+      "name": "tinyxml2",
+      "version>=": "9.0.0",
+      "platform": "!linux"
+    }
+  ],
+  "builtin-baseline": "13bde2ff13192e1b2fdd37bd9b475c7665ae6ae5",
+  "overrides": [
+    {
+      "name": "catch2",
+      "version": "2.13.8"
+    }
+  ]
+}

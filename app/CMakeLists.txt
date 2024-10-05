@@ -119,14 +119,16 @@ macro(configure_app_target APP_TARGET_NAME SHOULD_BUILD_MANUAL)
 
     if(APPLE)
         # Configure variables that are substituted into the plist
-        # Set CFBundleExecutable
-        set_target_properties(${APP_TARGET_NAME} PROPERTIES MACOSX_BUNDLE_EXECUTABLE_NAME "${OUTPUT_NAME}")
         # Set CFBundleName, which controls the application menu label
-        set_target_properties(${APP_TARGET_NAME} PROPERTIES MACOSX_BUNDLE_BUNDLE_NAME "TrenchBroom")
+        set_target_properties(${APP_TARGET_NAME} PROPERTIES MACOSX_BUNDLE_BUNDLE_NAME "${APP_TARGET_NAME}")
         # Set CFBundleShortVersionString to "2.0.0". This is displayed in the Finder and Spotlight.
         set_target_properties(${APP_TARGET_NAME} PROPERTIES MACOSX_BUNDLE_SHORT_VERSION_STRING "${CPACK_PACKAGE_VERSION}")
         # Set CFBundleVersion to the git describe output. Apple docs say it should be "three non-negative, period-separated integers with the first integer being greater than zero"
         set_target_properties(${APP_TARGET_NAME} PROPERTIES MACOSX_BUNDLE_BUNDLE_VERSION "${GIT_DESCRIBE}")
+
+        # Set NSHumanReadableCopyright.
+        string(TIMESTAMP TB_MACOSX_BUNDLE_COPYRIGHT "Copyright © %Y Kristian Duske. All rights reserved.")
+        set_target_properties(${APP_TARGET_NAME} PROPERTIES MACOSX_BUNDLE_COPYRIGHT "${TB_MACOSX_BUNDLE_COPYRIGHT}")
 
         # Set the path to the plist template
         set_target_properties(${APP_TARGET_NAME} PROPERTIES MACOSX_BUNDLE_INFO_PLIST "${APP_RESOURCE_DIR}/mac/TrenchBroom-Info.plist")
@@ -156,8 +158,13 @@ macro(configure_app_target APP_TARGET_NAME SHOULD_BUILD_MANUAL)
 
         # Copy DLLs to app directory
         add_custom_command(TARGET ${APP_TARGET_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:freeimage>" "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>"
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:assimp::assimp>" "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>"
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:freeimage::FreeImage>" "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>"
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:freetype>" "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>"
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:tinyxml2::tinyxml2>" "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>"
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:miniz::miniz>" "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>"
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:fmt::fmt>" "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>"
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:GLEW::GLEW>" "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>"
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:Qt5::Widgets>" "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>"
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:Qt5::Gui>" "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>"
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:Qt5::Core>" "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>"
@@ -246,7 +253,6 @@ configure_app_target(TrenchBroom-nomanual NO)
 
 # Common CPack configuration
 set(APP_PACKAGE_FILE_NAME "TrenchBroom-${APP_PLATFORM_NAME}-${GIT_DESCRIBE}-${CMAKE_BUILD_TYPE}")
-set(APP_PACKAGE_DIR_NAME "$ENV{DROPBOX}/TrenchBroom/")
 set(CPACK_PACKAGE_FILE_NAME ${APP_PACKAGE_FILE_NAME})
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "TrenchBroom Level Editor")
 set(CPACK_PACKAGE_VENDOR "TrenchBroom")
@@ -278,14 +284,20 @@ if(WIN32)
     endif()
 
     install(TARGETS TrenchBroom RUNTIME DESTINATION . COMPONENT TrenchBroom)
-    install(FILES
-            $<TARGET_FILE:freeimage>
-            $<TARGET_FILE:freetype>
-            $<TARGET_FILE:Qt5::Widgets>
-            $<TARGET_FILE:Qt5::Gui>
-            $<TARGET_FILE:Qt5::Core>
-            $<TARGET_FILE:Qt5::Svg>
-            DESTINATION . COMPONENT TrenchBroom)
+    install(CODE [[
+        # The regexes are a workaround for https://gitlab.kitware.com/cmake/cmake/-/issues/22431
+        file(GET_RUNTIME_DEPENDENCIES
+            RESOLVED_DEPENDENCIES_VAR RESOLVED_DLLS
+            PRE_EXCLUDE_REGEXES "api-ms-.*" "ext-ms-.*" "hvsifiletrust.dll"
+            POST_EXCLUDE_REGEXES ".*[Ss][Yy][Ss][Tt][Ee][Mm]32.*"
+            EXECUTABLES "$<TARGET_FILE:TrenchBroom>")
+
+        message("Packaging .DLL's:")
+        foreach(DLL ${RESOLVED_DLLS})
+            message("${DLL}")
+            file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}" FILES "${DLL}")
+        endforeach()
+    ]])
 
     #Qt plugins
     install(FILES
@@ -328,12 +340,15 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     set(APP_PACKAGE_FILE_NAME "${APP_PACKAGE_FILE_NAME}.${CMAKE_SYSTEM_PROCESSOR}")
     set(CPACK_PACKAGE_FILE_NAME ${APP_PACKAGE_FILE_NAME})
 
-    # generate deb and rpm packages
-    set(CPACK_GENERATOR "DEB;RPM")
+    # generate deb packages
+    set(CPACK_GENERATOR "DEB")
     set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")
 
     set(LINUX_RESOURCE_LOCATION "share/TrenchBroom")
     set(LINUX_TARGET_RESOURCE_DIRECTORY ${CPACK_PACKAGING_INSTALL_PREFIX}/${LINUX_RESOURCE_LOCATION})
+
+    # add mime type definitions
+    install(FILES "${APP_DIR}/resources/linux/trenchbroom.xml" DESTINATION "${CPACK_PACKAGING_INSTALL_PREFIX}/share/mime/packages/" COMPONENT TrenchBroom)
 
     # configure install scripts
     configure_file(${APP_DIR}/resources/linux/postinst ${CMAKE_CURRENT_BINARY_DIR}/linux/postinst @ONLY)
@@ -356,26 +371,14 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
     # deb package specifics
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER ${CPACK_PACKAGE_VENDOR})
-    set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS OFF)
-    # The following dependencies were generated by running with CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON, and then adding "libqt5widgets5 (>= 5.9.5)" as an alternate for qt59base.
-    # Our CI builds on Ubuntu 18.04 need to pull Qt 5.11.3 from ppa:beineri/opt-qt-5.11.3-bionic, so that's the minimum requirement.
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.14), libfreeimage3, libfreetype6 (>= 2.2.1), libgcc1 (>= 1:3.0), libgl1-mesa-glx | libgl1, libstdc++6 (>= 5.2), qt511base | libqt5widgets5 (>= 5.11.3), qt511svg | libqt5svg5 (>= 5.11.3)")
+    set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+    # The following dependencies were generated by running with CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON and dumping the list of dependencies with dpkg-deb --info <debfile>,
+    # and making the following modification(s)
+    # - remove libgcc-s1 (>= 3.0)
+    # set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.27), libgl1, libqt5core5a (>= 5.9.0~beta), libqt5gui5 (>= 5.6.0~beta), libqt5svg5 (>= 5.6.0~beta), libqt5widgets5 (>= 5.7.0), libstdc++6 (>= 7)")
     set(CPACK_DEBIAN_PACKAGE_SECTION "games")
     set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://kristianduske.com/trenchbroom/")
     set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_BINARY_DIR}/linux/postinst;${CMAKE_CURRENT_BINARY_DIR}/linux/prerm;${CMAKE_CURRENT_BINARY_DIR}/linux/postrm")
-
-    # rpm package specifics
-    set(CPACK_RPM_PACKAGE_LICENSE "GPLv3")
-    set(CPACK_RPM_PACKAGE_GROUP "Applications/Editors")
-    set(CPACK_RPM_PACKAGE_DESCRIPTION ${CPACK_PACKAGE_DESCRIPTION_SUMMARY})
-    set(CPACK_RPM_PACKAGE_SUMMARY ${CPACK_PACKAGE_DESCRIPTION_SUMMARY})
-    set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE "${CMAKE_CURRENT_BINARY_DIR}/linux/postinst")
-    set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE "${CMAKE_CURRENT_BINARY_DIR}/linux/prerm")
-    set(CPACK_RPM_POST_UNINSTALL_SCRIPT_FILE "${CMAKE_CURRENT_BINARY_DIR}/linux/postrm")
-    set(CPACK_RPM_SPEC_INSTALL_POST "/bin/true") # prevents stripping of debug symbols during rpmbuild
-
-    set(CPACK_PACKAGE_FILE_EXT "rpm")
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateChecksum.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/generate_checksum_rpm.sh" @ONLY)
 
     set(CPACK_PACKAGE_FILE_EXT "deb")
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateChecksum.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/generate_checksum_deb.sh" @ONLY)

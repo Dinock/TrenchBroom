@@ -25,13 +25,15 @@
 
 #include <memory>
 
-namespace TrenchBroom {
-namespace View {
-class DragTracker;
+namespace TrenchBroom::View
+{
+
+class GestureTracker;
 class MapDocument;
 class UVViewHelper;
 
-class UVShearTool : public ToolController, public Tool {
+class UVShearTool : public ToolController, public Tool
+{
 private:
   static const Model::HitType::Type XHandleHitType;
   static const Model::HitType::Type YHandleHitType;
@@ -49,9 +51,9 @@ private:
 
   void pick(const InputState& inputState, Model::PickResult& pickResult) override;
 
-  std::unique_ptr<DragTracker> acceptMouseDrag(const InputState& inputState) override;
+  std::unique_ptr<GestureTracker> acceptMouseDrag(const InputState& inputState) override;
 
   bool cancel() override;
 };
-} // namespace View
-} // namespace TrenchBroom
+
+} // namespace TrenchBroom::View

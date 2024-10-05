@@ -22,17 +22,20 @@
 #include "FloatType.h"
 #include "View/VertexToolBase.h"
 
-#include <vecmath/polygon.h>
+#include "vm/polygon.h"
 
 #include <memory>
 #include <string>
 #include <vector>
 
-namespace TrenchBroom {
-namespace View {
+namespace TrenchBroom
+{
+namespace View
+{
 class FaceHandleManager;
 
-class FaceTool : public VertexToolBase<vm::polygon3> {
+class FaceTool : public VertexToolBase<vm::polygon3>
+{
 private:
   std::unique_ptr<FaceHandleManager> m_faceHandles;
 
@@ -47,15 +50,17 @@ private:
   using VertexToolBase::findIncidentBrushes;
 
 public:
-  void pick(const vm::ray3& pickRay, const Renderer::Camera& camera, Model::PickResult& pickResult)
-    const override;
+  void pick(
+    const vm::ray3& pickRay,
+    const Renderer::Camera& camera,
+    Model::PickResult& pickResult) const override;
 
 public:
   FaceHandleManager& handleManager() override;
   const FaceHandleManager& handleManager() const override;
 
 public:
-  std::tuple<vm::vec3, vm::vec3> handlePositionAndOffset(
+  std::tuple<vm::vec3, vm::vec3> handlePositionAndHitPoint(
     const std::vector<Model::Hit>& hits) const override;
 
   MoveResult move(const vm::vec3& delta) override;
